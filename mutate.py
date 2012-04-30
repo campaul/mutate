@@ -32,7 +32,7 @@ def mutate(organism,maxValue,mutationRate):
 	while i < len(organism) :
 		## TODO: Make a better function for determining whether mutation happens
 		option = random.randint(1,4)
-		if random.randint(0,int(1/mutationRate)) == random.randint(0,int(1/mutationRate)):
+		if roll_dice(mutationRate):
 			option = random.choice((1,3))
 			if option == 1:
 				organism[i] = random.choice((0,maxValue)) # Replace
@@ -91,8 +91,6 @@ def getFitness(organism,qaTable,stack):
 	
 	stack.clear()
 	score = score #- lengthPenalty*len(organism)
-	if score <0:
-		score = 0
 	return score
 
 def decode(organism):
@@ -148,7 +146,7 @@ def getParamFitness(organism,params,setTest=None):
 	finalScore = score + geneScore - penalty
 
 	return finalScore	
-
+'''
 def topNPercent(scoreTable,n):
 	### Returns a list of individuals who score in the top n percent
 	### Takes a list of form (organism,score)
@@ -160,9 +158,46 @@ def topNPercent(scoreTable,n):
 		#print(decode(pair[0]))
 		topIndividuals.append(pair[0])
 	return topIndividuals	
+'''	
+def roll_dice(prob):
+	choice = random.randint(1,100)
+	if choice in xrange(1,int(prob*100)):
+		return True
+	return False
+
+def normalize(key_score_pair):
+	### Return a list of 2-tuples containing a key and a score, normalized to 1
+	scores = []
+	newPair = []
+	for pair in key_score_pair:
+		scores.append(pair[1])
+	maxScore = max(scores)
+	for pair in key_score_pair:
+		if pair[1] == 0:
+			newPair.append((pair[0],pair[1])) 
+		else:
+			newPair.append((pair[0],pair[1]/float(maxScore)))
 	
+	return newPair
+
+def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection=False):
+	if scoreTable:
+		normalScores = normalize(scoreTable)
+		winners = []
+		while len(winners) < popSize:
+			for pair in normalScores:
+				if roll_dice(pair[1]):
+					print(StackMachine.decode(pair[0]))
+					winners.append(pair[0])	
+					
+		newPopulation = buildPopulation(popSize,minLength,maxLength,maxValue,mutationRate,winners) 
+	else:
+		newPopulation = buildPopulation(popSize,minLength,maxLength,maxValue,mutationRate)
+
+	return newPopulation
 		
-def  breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection=False):
+'''
+def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection=False):
 	### Takes a list of (organism,score) and breeds individuals based upon score.
 	### Enabling eliteSelection will pass on the most succesful to the next gen.
 	#print(len(scoreTable))
@@ -207,7 +242,7 @@ def  breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistS
 		newPopulation = buildPopulation(popSize,minLength,maxLength,maxValue,mutationRate)
 
 	return newPopulation
-
+'''
 def generateTestValues():
 	number = random.randint(0,1000)
 	even = True if number % 2 == 0 else False
@@ -221,7 +256,7 @@ def __main__(stackMode=False):
 		stack = StackMachine.Stack()
 
 	## Defining some parameters
-	maxGenerations = None		# Maximum number of generations to evaluate
+	maxGenerations = 5		# Maximum number of generations to evaluate
 	maxLength = 4			# Maximum number of genes for each organism
 	minLength = 4			# Minimum number of genes for each organism
 	if stackMode:
@@ -230,7 +265,7 @@ def __main__(stackMode=False):
 		maxValue = 25
 	initPopSize = 100		# Desired population size for first generation
 	popSize = 1000			# Desired population size for each generation
-	mutationRate = .01		# Probability of any single gene mutating.
+	mutationRate = 1		# Probability of any single gene mutating.
 	# TODO: Adjust the mutation rate as the population starts to stagnate
 	elitistSelection = True		# Enabling this sends the best individuals to next gen
 	
@@ -276,23 +311,16 @@ def __main__(stackMode=False):
 			#print "Organism: " + str(StackMachine.decode(organism)) + ' ' + str(score)
 			else:
 				score = getParamFitness(organism,params,dictionary)
-			if score > 0:
+			if (score is not None) and (score > 0):
+				#print(StackMachine.decode(organism))
 				survivors.append((organism,score))
-		
-
+	
 		### Breed any surviving organisms to generate a new population.
 		population = breed(survivors,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection)
-		#population.append(StackMachine.decode("2 MOD 0 =="))
 		generations += 1
 		if maxGenerations:
 			if generations == maxGenerations:
 				break
-	winners = topNPercent(survivors,1)
-	for winner in winners:
-		if stackMode:
-			print str(StackMachine.decode(winner))
-		else:
-			print decode(winner)
 	return None
 	
 
