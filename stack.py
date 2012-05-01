@@ -133,7 +133,7 @@ def decode(instructions):
 		try:
 			decoded = decoded + encMap[int(i)] + ' '
 		except IndexError:
-			decoded = decoded + str(i-len(encMap)-1) + ' '
+			decoded = decoded + str(i-len(encMap)) + ' '
 	return decoded
 
 def encode(rawString):
