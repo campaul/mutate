@@ -105,9 +105,9 @@ def get_fitness(organism,stack):
 	stack.clear()
 	if len(timings):
 		meanTiming = sum(timings)/float(len(timings))
-		score = (right/float(attempted))*100 - timePenalty*meanTiming
+		score = (right/float(attempted)) - timePenalty*meanTiming
 	else:
-		score = (right/float(attempted))*100
+		score = (right/float(attempted))
 	return score
 
 def decode(organism):
@@ -156,7 +156,6 @@ def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSe
 			pair = normalScores.pop()
 			if roll_dice(pair[1]):
 				winners.append(pair[0])
-		
 		newPopulation = build_population(popSize,minLength,maxLength,maxValue,mutationRate,winners) 
 
 		if elitistSelection:
@@ -225,7 +224,7 @@ def __main__():
 		for organism in population:
 			score = get_fitness(organism,stack)
 			if (score is not None) and (score > 0):
-				if score > 60:
+				if score > .80:
 					print(decode(organism))
 				survivors.append((organism,score))
 
