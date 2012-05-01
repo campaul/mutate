@@ -61,12 +61,15 @@ def build_population(popSize,minLength,maxLength,maxValue,mutationRate,prevPopul
 
 	newPopulation = []
 	if prevPopulation:
-		for index in range(popSize):
+		for organism in prevPopulation:
 			mom = random.choice(prevPopulation)
 			dad = random.choice(prevPopulation)
 			newPopulation.append(spawn(minLength,maxLength,maxValue,[mom,dad],mutationRate))
+		while len(newPopulation) < popSize:
+			newBaby = spawn(minLength,maxLength,maxValue)
+			newPopulation.append(newBaby)
 		return newPopulation
-	else: 
+	else:
 		for index in range(popSize):
 			newBaby = spawn(minLength,maxLength,maxValue)
 			newPopulation.append(newBaby)
@@ -126,7 +129,10 @@ def normalize(key_score_pair):
 	newPair = []
 	for pair in key_score_pair:
 		scores.append(pair[1])
-	maxScore = max(scores)
+	try:
+		maxScore = max(scores)
+	except ValueError:
+		return None
 	for pair in key_score_pair:
 		if pair[1] == 0:
 			newPair.append((pair[0],pair[1])) 
@@ -145,11 +151,10 @@ def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSe
 			normalScores = scoreTable
 		winners = []
 
-		while len(winners) < popSize:
-			
-			for pair in normalScores:
-				if roll_dice(pair[1]):
-					winners.append(pair[0])
+		while normalScores:
+			pair = normalScores.pop()
+			if roll_dice(pair[1]):
+				winners.append(pair[0])
 		
 		newPopulation = build_population(popSize,minLength,maxLength,maxValue,mutationRate,winners) 
 
@@ -194,7 +199,7 @@ def __main__():
 	stack = StackMachine.Stack()
 
 	# Defining some parameters
-	maxGenerations = 50		# Maximum number of generations to evaluate
+	maxGenerations = None		# Maximum number of generations to evaluate
 	maxLength = 7			# Maximum number of genes for each organism
 	minLength = 3			# Minimum number of genes for each organism
 	maxValue = stack.instructionSetLength+9	# Highest possible value for each gene
@@ -219,6 +224,8 @@ def __main__():
 		for organism in population:
 			score = get_fitness(organism,stack)
 			if (score is not None) and (score > 0):
+				if score > 60:
+					print(decode(organism))
 				survivors.append((organism,score))
 
 		# Breed any surviving organisms to generate a new population.
@@ -228,14 +235,8 @@ def __main__():
 		generations += 1
 		if maxGenerations:
 			if generations == maxGenerations+1:
-				break
-
-		# Print survivors in the top 95% 
-		survivors = normalize(survivors)
-		for each in survivors:
-			if each[1] > .95:
-				print(decode(each[0]))
-
+				break	
+	
 	# Once out of the loop, save the last generation to a text file
 	save_results(survivors)
 		
@@ -243,7 +244,4 @@ def __main__():
 	
 
 __main__()
-
-# TODO: Adjust the mutation rate as the population starts to stagnate 
-# TODO: Save the parameters in a dictionary or something
-# TODO: Implement multithreading		
+	
