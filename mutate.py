@@ -194,7 +194,7 @@ def save_results(survivors):
 
 def __main__():
 	# Uncomment this next line to interactively test the stack.
-	# StackMachine.stackTest()
+	# StackMachine.stack_test()
 	
 	# Initialize the stack
 	stack = StackMachine.Stack()

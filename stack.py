@@ -27,7 +27,7 @@ class Stack(list):
 		self.instructionSetLength = len(self.geneMap)
 		self.execTime = 0
 
-	def setInitialValue(self,value):
+	def set_initial_value(self,value):
 		self.clear()
 		self.append(value)		
 			
@@ -58,7 +58,7 @@ class Stack(list):
 			if gene >= len(self.geneMap):
 				self.append(gene-len(self.geneMap))
 			else:
-				nArgs = getNumArgs((self.geneMap[gene],gene))
+				nArgs = get_num_args((self.geneMap[gene],gene))
 				popped = []
 				try:
 					for i in range(nArgs):
@@ -100,7 +100,7 @@ class Stack(list):
 		return self.memory[self.pop()]
 		
 		
-def stackTest():
+def stack_test():
 	### Provides an environment for interactively testing the stack.
 	stack = Stack()
 	while True:
@@ -114,7 +114,7 @@ def stackTest():
 		parsedInput = encode(userInput)
 		stack.evaluate(parsedInput,stackTest=True)
 
-def getNumArgs(function):
+def get_num_args(function):
 	### Returns the number of arguments for a function.
 	executable = function[0]
 	name = function[1]
