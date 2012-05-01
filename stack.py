@@ -34,6 +34,7 @@ class Stack(list):
 	def clear(self):
 		### Reset the stack's state.
 		self.memory = {}
+		self.execTime = 0
 		# TODO: Do something more elegant than:
 		while len(self) > 0:
 			self.pop()
@@ -78,6 +79,8 @@ class Stack(list):
 					return None
 				if result or result == 0:
 					self.append(result)
+		stopTime = time.clock()
+		self.execTime = stopTime - startTime
 		if stackTest:
 			return None
 		else:
