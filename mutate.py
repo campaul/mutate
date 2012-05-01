@@ -97,6 +97,7 @@ def get_fitness(organism,stack):
 			stack.clear()
 			return None
 		else:
+			stack.clear()
 			continue
 		timings.append(stack.execTime)	
 		stack.clear()
