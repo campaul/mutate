@@ -24,5 +24,4 @@ TODO
 -----------------------------
 -- Implement multithreading
 -- Provide a way for the mutation rate to be adjusted as the population begins to stagnate
--- Pass the parameters around using a dictionary or something like that
 -- Implement a nice way to watch the whole process (number of breeders, score histogram, etc.)
