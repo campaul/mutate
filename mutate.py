@@ -89,7 +89,6 @@ def get_fitness(organism,stack):
 		stack.append(test[0])	
 		result = stack.evaluate(organism)
 		attempted += 1
-		
 		if result is test[1]:
 			right += 1
 		
@@ -142,27 +141,30 @@ def normalize(key_score_pair):
 	
 	return newPair
 
-def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection=False,normalizeScores=True):
+def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection=False,normalizeScores=True,maxBreeders=None):
 	# Selectively breed the population, with their probability of breeding being proportional to their scores
-
+	if maxBreeders is None:
+		maxBreeders = popSize
 	if scoreTable:
 		if normalizeScores:
 			normalScores = normalize(scoreTable)
 		else:
 			normalScores = scoreTable
 		winners = []
-
-		while normalScores:
-			pair = normalScores.pop()
-			if roll_dice(pair[1]):
-				winners.append(pair[0])
-		newPopulation = build_population(popSize,minLength,maxLength,maxValue,mutationRate,winners) 
-
 		if elitistSelection:
 			elites = []
 			for pair in normalScores:
 				if pair[1] > .95:
 					elites.append(pair[0])
+					normalScores.remove(pair)
+		while len(winners) < maxBreeders:
+			#air = normalScores.pop()
+			for pair in normalScores:
+				if roll_dice(pair[1]):
+					winners.append(pair[0])
+		newPopulation = build_population(popSize,minLength,maxLength,maxValue,mutationRate,winners) 
+
+		if elitistSelection:	
 			for each in elites:
 				# TODO: Use something other than pop
 				newPopulation.pop()
@@ -208,7 +210,7 @@ def __main__():
 	mutationRate = 	.1		# Probability of any single gene mutating.
 	elitistSelection = True		# Enabling this sends the best individuals to next gen	
 	normalizeScores = False		# Enabling this will normalize scores between 0 and 1
-
+	maxBreeders = 100		# Maximum number of descendents from previous population
 	
 	# Generate the initial population.
 	population = build_population(initPopSize,minLength,maxLength,maxValue,mutationRate)
@@ -229,7 +231,7 @@ def __main__():
 				survivors.append((organism,score))
 
 		# Breed any surviving organisms to generate a new population.
-		population = breed(survivors,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection,normalizeScores)
+		population = breed(survivors,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection,normalizeScores,maxBreeders)
 
 		# Break out of the loop if we've evaluated the maximum number of generations
 		generations += 1
