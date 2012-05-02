@@ -1,53 +1,49 @@
 #!/usr/bin/python
 
 import random
-import math
-import string
 
-import stack as StackMachine
-
-
-def spawn(minLength,maxLength,maxValue,parents=None,mutationRate=.001):
+def spawn(params,parents=None):
 	# Produce a new organism provided the number of genes and optional parents.
 	# An organism is a list of integers, where each integer is a stack instruction.
 	
 	# If a list of parents is provided:	
 	baby = []
-	length = random.randint(minLength,maxLength)
+	length = random.randint(params['minLength'],params['maxLength'])
 	if parents:
 		for i in xrange(length):
 			parent = random.choice(parents)
 			try:
 				baby.append(parent[i])
 			except IndexError:
-				return mutate(baby,maxValue,mutationRate)
-		return mutate(baby,maxValue,mutationRate)
+				return mutate(params,baby)
+		return mutate(params,baby)
 
 	# If no parents are provided, randomly generate a list of integers.
 	for index in range(length):
-		baby.append(random.randint(0,maxValue))
+		baby.append(random.randint(0,params['maxValue']))
 	return baby
 
 
-def mutate(organism,maxValue,mutationRate):
+def mutate(params,organism):
 	# Introduce random variation into the genome
 	i = 0
 	while i < len(organism) :
 		option = random.randint(1,4)
 
-		if roll_dice(mutationRate):
+		if roll_dice(params['mutationRate']):
 			if option == 1:
 				# Replace
-				organism[i] = random.randint(0,maxValue)
+				organism[i] = random.randint(0,params['maxValue'])
 			if option == 2:
 				# Remove
 				organism.pop(i)
 			if option == 3:
 				# Insert
-				organism.insert(i,random.randint(0,maxValue))
+				organism.insert(i,random.randint(0,params['maxValue']))
 			if option == 4:
 				# Swap)
 				first = random.randint(0,len(organism)-1)
+
 				second = random.randint(0,len(organism)-1)
 				organism[first],organism[second] = organism[second],organism[first]
 			
@@ -55,7 +51,7 @@ def mutate(organism,maxValue,mutationRate):
 	return organism
 
 
-def build_population(popSize,minLength,maxLength,maxValue,mutationRate,prevPopulation=None):
+def build_population(params,prevPopulation=None):
 	# Build a new population, optionally taking in existing organisms to be bred
 	# Args: population size, length of the genome, highest possible value for gene, population
 
@@ -64,50 +60,18 @@ def build_population(popSize,minLength,maxLength,maxValue,mutationRate,prevPopul
 		for organism in prevPopulation:
 			mom = random.choice(prevPopulation)
 			dad = random.choice(prevPopulation)
-			newPopulation.append(spawn(minLength,maxLength,maxValue,[mom,dad],mutationRate))
-		while len(newPopulation) < popSize:
-			newBaby = spawn(minLength,maxLength,maxValue)
+			newPopulation.append(spawn(params,[mom,dad]))
+		while len(newPopulation) < params['popSize']:
+			newBaby = spawn(params)
 			newPopulation.append(newBaby)
 		return newPopulation
 	else:
-		for index in range(popSize):
-			newBaby = spawn(minLength,maxLength,maxValue)
+		for index in range(params['popSize']):
+			newBaby = spawn(params)
 			newPopulation.append(newBaby)
 	return newPopulation
 
 
-def get_fitness(organism,stack):
-	# Determine the fitness of a single organism
-
-	score = 0
-	timePenalty = 10000
-	attempted = 0
-	right = 0
-	timings = []
-	for i in xrange(100):
-		test = generate_test()
-		stack.append(test[0])	
-		result = stack.evaluate(organism)
-		attempted += 1
-		if result is test[1]:
-			right += 1
-		
-		elif result is None:
-			stack.clear()
-			return None
-		else:
-			stack.clear()
-			continue
-		timings.append(stack.execTime)	
-		stack.clear()
-	
-	stack.clear()
-	if len(timings):
-		meanTiming = sum(timings)/float(len(timings))
-		score = (right/float(attempted)) - timePenalty*meanTiming
-	else:
-		score = (right/float(attempted))
-	return score
 
 def decode(organism):
 	# Takes the genes and returns their human-readable representation.
@@ -141,45 +105,40 @@ def normalize(key_score_pair):
 	
 	return newPair
 
-def breed(scoreTable,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection=False,normalizeScores=True,maxBreeders=None):
+def breed(params,scoreTable):
 	# Selectively breed the population, with their probability of breeding being proportional to their scores
-	if maxBreeders is None:
-		maxBreeders = popSize
+	if params['maxBreeders'] is None:
+		params['maxBreeders'] = params['popSize']
 	if scoreTable:
-		if normalizeScores:
+		if params['normalizeScores']:
 			normalScores = normalize(scoreTable)
 		else:
 			normalScores = scoreTable
 		winners = []
-		if elitistSelection:
+		if params['elitistSelection']:
 			elites = []
 			for pair in normalScores:
-				if pair[1] > .95:
+				if pair[1] > params['elitePercentile']:
 					elites.append(pair[0])
 					normalScores.remove(pair)
-		while len(winners) < maxBreeders:
+		while len(winners) < params['maxBreeders']:
 			#air = normalScores.pop()
 			for pair in normalScores:
 				if roll_dice(pair[1]):
 					winners.append(pair[0])
-		newPopulation = build_population(popSize,minLength,maxLength,maxValue,mutationRate,winners) 
+		newPopulation = build_population(params,winners) 
 
-		if elitistSelection:	
+		if params['elitistSelection']:	
 			for each in elites:
 				# TODO: Use something other than pop
 				newPopulation.pop()
 				newPopulation.append(each)
 	else:
-		newPopulation = build_population(popSize,minLength,maxLength,maxValue,mutationRate)
+		newPopulation = build_population(params)
 
 	return newPopulation
 		
 
-def generate_test():
-	# This enerates the test values for determining fitness.
-	number = random.randint(0,1000)
-	even = True if number % 2 == 0 else False
-	return (number,even)
 	
 	
 def save_results(survivors):
@@ -193,57 +152,29 @@ def save_results(survivors):
 	fileHandle.write(formatted)
 	fileHandle.close()
 
-def __main__():
-	# Uncomment this next line to interactively test the stack.
-	# StackMachine.stack_test()
-	
-	# Initialize the stack
-	stack = StackMachine.Stack()
+def solve(params,fitnessFunction):
 
-	# Defining some parameters
-	maxGenerations = None		# Maximum number of generations to evaluate
-	maxLength = 7			# Maximum number of genes for each organism
-	minLength = 3			# Minimum number of genes for each organism
-	maxValue = stack.instructionSetLength+9	# Highest possible value for each gene
-	initPopSize = 100		# Desired population size for first generation
-	popSize = 500			# Desired population size for each generation
-	mutationRate = 	.1		# Probability of any single gene mutating.
-	elitistSelection = True		# Enabling this sends the best individuals to next gen	
-	normalizeScores = False		# Enabling this will normalize scores between 0 and 1
-	maxBreeders = 100		# Maximum number of descendents from previous population
-	
 	# Generate the initial population.
-	population = build_population(initPopSize,minLength,maxLength,maxValue,mutationRate)
+	population = build_population(params)
 	generations = 1
-
-	# Keep evaluating, breeding, and spawning until (and if) maxGenerations is reached 
+	
+	# Keep evaluating, breeding, and spawning until (and if) params['maxGenerations'] is reached 
 	while True:
-
-		print "Generation " + str(generations) + " of " + str(maxGenerations) 
+		print('Generation ' + str(generations))
 		survivors = [] # list of tuples of form: (organism,score)
 		
 		# Evaluate each organism in the current population for fitness
 		for organism in population:
-			score = get_fitness(organism,stack)
+			score = fitnessFunction(params,organism)
 			if (score is not None) and (score > 0):
-				if score > .80:
-					print(decode(organism))
 				survivors.append((organism,score))
+		print(str(len(survivors)) + ' survivors')	
+		if params['maxGenerations']:
+			if generations == params['maxGenerations']+1:
+				return survivors	
 
 		# Breed any surviving organisms to generate a new population.
-		population = breed(survivors,popSize,minLength,maxLength,maxValue,mutationRate,elitistSelection,normalizeScores,maxBreeders)
+		population = breed(params,survivors)
 
 		# Break out of the loop if we've evaluated the maximum number of generations
 		generations += 1
-		if maxGenerations:
-			if generations == maxGenerations+1:
-				break	
-	
-	# Once out of the loop, save the last generation to a text file
-	save_results(survivors)
-		
-	return None
-	
-
-__main__()
-	
