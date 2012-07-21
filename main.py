@@ -23,8 +23,9 @@ def get_fitness(params,organism):
 		
 		elif result is None:
 			stack.clear()
-			return None
+			organism.kill()
 		else:
+			right -= 1
 			stack.clear()
 		timings.append(stack.execTime)	
 		stack.clear()
@@ -35,8 +36,10 @@ def get_fitness(params,organism):
 		score = (right/float(attempted)) - timePenalty*meanTiming
 	else:
 		score = (right/float(attempted))
-	return score 
+	organism.score = score
+	return  
 
+					
 def decode(encMap,organism):
 	# Converts an organism's genes to their human-readable representation
 
@@ -57,9 +60,9 @@ def generate_test():
 	
 def __main__():
 	params = {
-		'maxGenerations':50,
+		'maxGenerations':500,
 		'maxLength':4,
-		'minLength':4,
+		'minLength':1,
 		'maxValue':27,
 		'initPopSize':100,
 		'popSize':250,
@@ -68,7 +71,7 @@ def __main__():
 		'normalizeScores':False,
 		'maxBreeders':50,
 		'execTimePenalty':10000,
-		'execIterations':20,
+		'execIterations':8,
 		'elitePercentile':.95
 		}
 	
@@ -92,8 +95,9 @@ def __main__():
 		'FALSE']
 
 	results = mutate.solve(params,get_fitness)
-
-	for each in sorted(results, key = lambda result: result[1]):
-		print(decode(encMap,each[0]) + ' : ' + str(each[1]))
+	
+	for organism in sorted(results, key = lambda result:result.score):
+		if organism.score > 0:
+			print(decode(encMap,organism) + ' : ' + str(organism.score))
 	
 __main__()
