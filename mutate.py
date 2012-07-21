@@ -2,76 +2,83 @@
 
 import random
 
-def spawn(params,parents=None):
-	# Produce a new organism provided the number of genes and optional parents.
-	# An organism is a list of integers, where each integer is a stack instruction.
-	
-	# If a list of parents is provided:	
-	baby = []
-	length = random.randint(params['minLength'],params['maxLength'])
-	if parents:
-		for i in xrange(length):
-			parent = random.choice(parents)
-			try:
-				baby.append(parent[i])
-			except IndexError:
-				return mutate(params,baby)
-		return mutate(params,baby)
+class Organism(list):
+	def __init__(self,params,parents=None):
 
-	# If no parents are provided, randomly generate a list of integers.
-	for index in range(length):
-		baby.append(random.randint(0,params['maxValue']))
-	return baby
+		# Construct the organism's gene sequence.
+		length = random.randint(params['minLength'],params['maxLength'])
+		self.parents = parents
+		
+		if parents is None or (parents[0] is None or parents[1] is None):
+			# Randomly generate a list of integers
+			for i in xrange(length):
+				self.append(random.randint(0,params['maxValue']))
+		else:
+			# Select genes from both parents, randomly alternating from which
+			parentGenes = zip(parents[0],parents[1])
+			for each in parentGenes:
+				i = random.randint(0,1)
+				self.append(each[i])
 
+		# TODO: mutation
 
-def mutate(params,organism):
+		# Define the organism's attributes.
+		self.score = 0
+		self.alive = True
+		return None
+
+	def mutate(self,params):
 	# Introduce random variation into the genome
-	i = 0
-	while i < len(organism) :
-		option = random.randint(1,4)
+	
+		for gene in self:
+			option = random.randint(1,4)
 
-		if roll_dice(params['mutationRate']):
-			if option == 1:
-				# Replace
-				organism[i] = random.randint(0,params['maxValue'])
-			if option == 2:
-				# Remove
-				organism.pop(i)
-			if option == 3:
-				# Insert
-				organism.insert(i,random.randint(0,params['maxValue']))
-			if option == 4:
-				# Swap)
-				first = random.randint(0,len(organism)-1)
+			if roll_dice(params['mutationRate']):
+				if option == 1:
+					# Replace
+					gene = random.randint(0,params['maxValue'])
+				if option == 2:
+					# Remove
+					self.pop(gene)
+				if option == 3:
+					# Insert
+					self.insert(i,random.randint(0,params['maxValue']))
+				if option == 4:
+					# Swap)
+					first = random.randint(0,len(self)-1)
 
-				second = random.randint(0,len(organism)-1)
-				organism[first],organism[second] = organism[second],organism[first]
-			
-		i += 1
-	return organism
+					second = random.randint(0,len(self)-1)
+					self[first],self[second] = self[second],self[first]
+				
+	
+		
 
-
-def build_population(params,prevPopulation=None):
-	# Build a new population, optionally taking in existing organisms to be bred
-	# Args: population size, length of the genome, highest possible value for gene, population
-
-	newPopulation = []
-	if prevPopulation:
-		for organism in prevPopulation:
-			mom = random.choice(prevPopulation)
-			dad = random.choice(prevPopulation)
-			newPopulation.append(spawn(params,[mom,dad]))
-		while len(newPopulation) < params['popSize']:
-			newBaby = spawn(params)
-			newPopulation.append(newBaby)
-		return newPopulation
-	else:
-		for index in range(params['popSize']):
-			newBaby = spawn(params)
-			newPopulation.append(newBaby)
-	return newPopulation
-
-
+	def kill(self):	
+		self.alive = False
+		
+class Population(list):
+	def __init__(self,params,prevPopulation=[]):
+		
+		if len(prevPopulation) > 2:
+			# TODO : Implement elitist selection.
+				
+			i = 0
+			while i < params['maxBreeders']:
+				# TODO : Is there a more Pythonic way to do this?
+				mom = prevPopulation.select_by_score()
+				dad = prevPopulation.select_by_score()
+				self.append(Organism(params,[mom,dad]))
+				i += 1
+		while len(self) < params['popSize']:
+			self.append(Organism(params))
+				 
+		return 
+		
+	def select_by_score(self):
+		for organism in self:
+			if roll_dice(organism.score) and organism.alive:
+				return organism
+		return None
 
 def decode(organism):
 	# Takes the genes and returns their human-readable representation.
@@ -104,7 +111,7 @@ def normalize(key_score_pair):
 			newPair.append((pair[0],pair[1]/float(maxScore)))
 	
 	return newPair
-
+'''
 def breed(params,scoreTable):
 	# Selectively breed the population, with their probability of breeding being proportional to their scores
 	if params['maxBreeders'] is None:
@@ -136,45 +143,37 @@ def breed(params,scoreTable):
 	else:
 		newPopulation = build_population(params)
 
-	return newPopulation
-		
-
+	return newPopulation		
 	
-	
-def save_results(survivors):
+def save_results(population):
 	# Decode each organism's genome into a human-readable format and save them all
 	# to a text file.
 
 	fileHandle = open('output.txt','w')
 	formatted = ''
-	for survivor in survivors:
-		formatted = formatted + decode(survivor[0]) + ' : ' + str(survivor[1]) + '\n'
+	for organism in population:
+		formatted = formatted + decode(organism[0]) + ' : ' + str(organism[1]) + '\n'
 	fileHandle.write(formatted)
 	fileHandle.close()
-
+'''
 def solve(params,fitnessFunction):
 
 	# Generate the initial population.
-	population = build_population(params)
+	population = Population(params)
 	generations = 1
 	
 	# Keep evaluating, breeding, and spawning until (and if) params['maxGenerations'] is reached 
 	while True:
 		print('Generation ' + str(generations))
-		survivors = [] # list of tuples of form: (organism,score)
 		
 		# Evaluate each organism in the current population for fitness
 		for organism in population:
-			score = fitnessFunction(params,organism)
-			if (score is not None) and (score > 0):
-				survivors.append((organism,score))
-		print(str(len(survivors)) + ' survivors')	
-		if params['maxGenerations']:
-			if generations == params['maxGenerations']+1:
-				return survivors	
-
+			fitnessFunction(params,organism)
+		if generations == params['maxGenerations']:
+			#save_results(population)
+			return population
 		# Breed any surviving organisms to generate a new population.
-		population = breed(params,survivors)
+		population = Population(params,population)
 
 		# Break out of the loop if we've evaluated the maximum number of generations
 		generations += 1
