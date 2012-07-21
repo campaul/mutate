@@ -50,7 +50,7 @@ def decode(encMap,organism):
 
 
 def generate_test():
-	# This enerates the test values for determining fitness.
+	# This generates the test values for determining fitness.
 	number = random.randint(0,1000)
 	even = True if number % 2 == 0 else False
 	return (number,even)
