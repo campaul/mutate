@@ -60,7 +60,7 @@ def generate_test():
 	
 def __main__():
 	params = {
-		'maxGenerations':500,
+		'maxGenerations':100,
 		'maxLength':4,
 		'minLength':1,
 		'maxValue':27,
