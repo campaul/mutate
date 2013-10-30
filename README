@@ -2,8 +2,7 @@ ABOUT
 -----------------------------
 mutate.py is an experiment in genetic algorithms and genetic programming.
 
-Currently, mutate.py tries to find a series of RPL-like stack commands that constitute a program capable of determining the evenness of a number. 
-
+Mutate attempts to match a given string (currently hard-coded) by defining a fitness function that scores candidate strings by their Hamming distance from the target string.
 
 GOAL
 -----------------------------

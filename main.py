@@ -1,98 +1,124 @@
 import random
-
-import stack as StackMachine
 import mutate
 
-stack = StackMachine.Stack()
 
-def get_fitness(params,organism):
-	# Determine the fitness of a single organism	
-	score = 0
-	timePenalty = params['execTimePenalty']
-	attempted = 0
-	right = 0
-	timings = []
-	#print('Evaluating ' + StackMachine.decode(organism))
-	for i in xrange(params['execIterations']):
-		test = generate_test()
-		stack.append(test[0])	
-		result = stack.evaluate(organism)
-		attempted += 1
-		if result is test[1]:
-			right += 1
-		
-		elif result is None:
-			stack.clear()
-			organism.kill()
-		else:
-			right -= 1
-			stack.clear()
-		timings.append(stack.execTime)	
-		stack.clear()
+def get_hamming_distance(string1,string2):
+	try:
+		assert len(string1) == len(string2)
 	
-	stack.clear()
-	if timings:
-		meanTiming = sum(timings)/float(len(timings))
-		score = (right/float(attempted)) - timePenalty*meanTiming
-	else:
-		score = (right/float(attempted))
-	organism.score = score
-	return  
+	except AssertionError:
+		print(string2)
+		print "String is " + str(len(string2)) + " characters long, unequal to the required length. Exiting."
+		exit()
 
+	distance = sum(ch1 != ch2 for ch1, ch2 in zip(string1,string2))
+	return distance
+
+def get_fitness(params, organism):
+	# In this example, the organism's fitness is defined by the Hamming distance from our given string.
+	#the_string = "THE FOOL DOTH THINK HE IS WISE BUT THE WISE DOTH KNOW HE IS A FOOL"
+	the_string = "GARRETT"
+	
+	hdistance = get_hamming_distance(the_string,decode(organism))
+	
+	if hdistance == 0:
+		organism.score = 1
+		print("Solution found.")
+		return
+	else:
+		
+		organism.score = ((params['maxLength']-hdistance)/float(params['maxLength']) * 100)
+		if organism.score == 0:
+			organism.kill()
+			return
+		else:
+			return
+	
 					
-def decode(encMap,organism):
-	# Converts an organism's genes to their human-readable representation
+def decode(organism):
+	
+	encMap = ['A',
+		'B',
+		'C',
+		'D',
+		'D',
+		'F',
+		'G',
+		'H',
+		'I',
+		'J',
+		'K',
+		'L',
+		'M',
+		'N',
+		'O',
+		'P',
+		'Q',
+		'R',
+		'S',
+		'T',
+		'U',
+		'V',
+		'W',
+		'X',
+		'Y',
+		'Z',
+		' ']
+
+
 
 	decoded = ''
 	for i in organism:
 		try:
-			decoded = decoded + encMap[int(i)] + ' '
+			decoded = decoded + encMap[int(i)]
 		except IndexError:
-			decoded = decoded + str(i-len(encMap)) + ' '
+			print str(i) + " is out of the encoder map's range. Exiting."
 	return decoded
 
 
-def generate_test():
-	# This generates the test values for determining fitness.
-	number = random.randint(0,1000)
-	even = True if number % 2 == 0 else False
-	return (number,even)
-	
 def __main__():
 	params = {
-		'maxGenerations':100,
-		'maxLength':4,
-		'minLength':1,
-		'maxValue':27,
-		'initPopSize':100,
+		'maxGenerations':None,
+		'maxLength':7, # Change back to 66
+		'minLength':7,
+		'maxValue':26,
+		'initPopSize':250,
 		'popSize':250,
-		'mutationRate':.015,
-		'elitistSelection':False,
+		'mutationRate':.5,
+		'elitistSelection':False, # NOT READY! Hardcoded instead of done by normalization.
 		'normalizeScores':False,
-		'maxBreeders':50,
+		'maxBreeders':250,
 		'execTimePenalty':10000,
 		'execIterations':8,
 		'elitePercentile':.95
 		}
 	
-	encMap = ['+',
-		'-',
-		'/',
-		'*',
-		'DROP',
-		'SWAP',
-		'DUP',
-		'STO',
-		'RCL',
-		'<',
-		'>',
-		'==',
-		'OR',
-		'AND',
-		'MOD',
-		'IFTE',
-		'TRUE',
-		'FALSE']
+	encMap = ['A',
+		'B',
+		'C',
+		'D',
+		'D',
+		'F',
+		'G',
+		'H',
+		'I',
+		'J',
+		'K',
+		'L',
+		'M',
+		'N',
+		'O',
+		'P',
+		'Q',
+		'R',
+		'S',
+		'T',
+		'U',
+		'V',
+		'W',
+		'X',
+		'Y',
+		'Z']
 
 	results = mutate.solve(params,get_fitness)
 	

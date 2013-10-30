@@ -20,35 +20,76 @@ class Organism(list):
 				i = random.randint(0,1)
 				self.append(each[i])
 
-		# TODO: mutation
 
 		# Define the organism's attributes.
 		self.score = 0
 		self.alive = True
+		self.mutant = False
+		self.elite = False # May not need this functionality.
+		
+		# Let Darwin do his sexy work
+		self.mutate(params)
+		
+
+		### Testing ###
+		"""
+
+		# Ensure that organism is of the right length	
+		try:
+			assert len(self) <= params['maxLength']
+			assert len(self) >= params['minLength']
+		except AssertionError:
+			print("WARNING: Organism is of an invalid length upon spawn!" + "(" + str(len(self)) + ")")
+			
+		# Ensure that the organism is not a mutant if mutation rate is set to zero.
+		try:
+			assert self.mutant == False
+		except AssertionError:
+			print "Mutation rate is set to zero, but mutation is still occurring. Life apparently found a way."
+			exit()
+		
+		# Ensure that the organism IS a mutant if mutation rate is set to 1.
+		# TODO: This test fails.
+		try:
+			assert self.mutant == True
+		except AssertionError:
+			print "Mutation rate is 100%, but I haven't mutated."
+			exit()
+		"""
 		return None
 
 	def mutate(self,params):
 	# Introduce random variation into the genome
-	
 		for gene in self:
-			option = random.randint(1,4)
-
 			if roll_dice(params['mutationRate']):
+				self.mutant = True
+				option = random.randint(1,2)
+
 				if option == 1:
 					# Replace
+					# NOTE : It almost seems like we aren't getting replacements.
 					gene = random.randint(0,params['maxValue'])
+					return
+				# Hamming distance is undefined for strings of unequal length, so we can't do this here.
+				"""
 				if option == 2:
 					# Remove
 					self.pop(gene)
 				if option == 3:
 					# Insert
 					self.insert(i,random.randint(0,params['maxValue']))
-				if option == 4:
-					# Swap)
+				"""
+				if option == 2:
+					# Swap
+					#print("Mutation occurred! (swap)")
 					first = random.randint(0,len(self)-1)
-
+	
 					second = random.randint(0,len(self)-1)
 					self[first],self[second] = self[second],self[first]
+					return
+				else:
+					print("We never should have gotten here.")
+					exit()
 				
 	
 		
@@ -58,7 +99,6 @@ class Organism(list):
 		
 class Population(list):
 	def __init__(self,params,prevPopulation=[]):
-		
 		if len(prevPopulation) > 2:
 			# TODO : Implement elitist selection.
 				
@@ -71,19 +111,52 @@ class Population(list):
 				i += 1
 		while len(self) < params['popSize']:
 			self.append(Organism(params))
+		
+		### Testing ###
+		# Ensure that we are the right size.
+		try:
+			assert len(self) == params['popSize']
+		except AssertionError:
+			print "Population size is supposed to be " + str(params['popSize']) + ", but is actually " + str(len(self)) + "."
+			exit()
+
+		# Ensure that we have the right number of breeders.
+		try:
+			bred = 0
+			bastards = 0
+			for each in self:
+				if each.parents:
+					bred += 1
+				else:
+					bastards += 1
+			assert bred == params['maxBreeders']
+		except AssertionError:
+			print "We're supposed to have " + str(params['maxBreeders']) + " organisms with parents, but we have " + str(bred) + "."
+			print "Previous population had " + str(len(prevPopulation)) + " organisms."
+		
 				 
-		return 
+		return
+
+	def get_mean_score(self):
+		total_pop_score = 0
+		for each in self:
+			total_pop_score += each.score
+		average = total_pop_score/float(len(self))
+		print average
+		return average
 		
 	def select_by_score(self):
 		for organism in self:
-			if roll_dice(organism.score) and organism.alive:
+			
+			if roll_dice(organism.score > self.get_mean_score()) and organism.alive:
+				
 				return organism
+				if params['elitistSelection']:
+					if organism.score > self.get_mean_score(): # Crappy way of doing this
+						self.append(organism)
+						organism.elite = True
+						i += 1
 		return None
-
-def decode(organism):
-	# Takes the genes and returns their human-readable representation.
-
-	return StackMachine.decode(organism)		
 
 
 def roll_dice(prob):
@@ -111,51 +184,7 @@ def normalize(key_score_pair):
 			newPair.append((pair[0],pair[1]/float(maxScore)))
 	
 	return newPair
-'''
-def breed(params,scoreTable):
-	# Selectively breed the population, with their probability of breeding being proportional to their scores
-	if params['maxBreeders'] is None:
-		params['maxBreeders'] = params['popSize']
-	if scoreTable:
-		if params['normalizeScores']:
-			normalScores = normalize(scoreTable)
-		else:
-			normalScores = scoreTable
-		winners = []
-		if params['elitistSelection']:
-			elites = []
-			for pair in normalScores:
-				if pair[1] > params['elitePercentile']:
-					elites.append(pair[0])
-					normalScores.remove(pair)
-		while len(winners) < params['maxBreeders']:
-			#air = normalScores.pop()
-			for pair in normalScores:
-				if roll_dice(pair[1]):
-					winners.append(pair[0])
-		newPopulation = build_population(params,winners) 
 
-		if params['elitistSelection']:	
-			for each in elites:
-				# TODO: Use something other than pop
-				newPopulation.pop()
-				newPopulation.append(each)
-	else:
-		newPopulation = build_population(params)
-
-	return newPopulation		
-	
-def save_results(population):
-	# Decode each organism's genome into a human-readable format and save them all
-	# to a text file.
-
-	fileHandle = open('output.txt','w')
-	formatted = ''
-	for organism in population:
-		formatted = formatted + decode(organism[0]) + ' : ' + str(organism[1]) + '\n'
-	fileHandle.write(formatted)
-	fileHandle.close()
-'''
 def solve(params,fitnessFunction):
 
 	# Generate the initial population.
@@ -164,14 +193,16 @@ def solve(params,fitnessFunction):
 	
 	# Keep evaluating, breeding, and spawning until (and if) params['maxGenerations'] is reached 
 	while True:
-		print('Generation ' + str(generations))
+		#print('Generation ' + str(generations))
 		
 		# Evaluate each organism in the current population for fitness
 		for organism in population:
 			fitnessFunction(params,organism)
-		if generations == params['maxGenerations']:
-			#save_results(population)
-			return population
+		
+		if params['maxGenerations']:
+			if generations == params['maxGenerations']:
+				#save_results(population)
+				return population
 		# Breed any surviving organisms to generate a new population.
 		population = Population(params,population)
 
