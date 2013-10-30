@@ -1,22 +1,18 @@
-ABOUT
------------------------------
+## ABOUT
 mutate.py is an experiment in genetic algorithms and genetic programming.
 
 Currently, mutate.py tries to find a series of RPL-like stack commands that constitute a program capable of determining the evenness of a number. 
 
 
-GOAL
------------------------------
+## GOAL
 Eventually, mutate.py should be a framework that allows one to quickly solve problems using the principles of evolution by natural selection. One should have to do little more than define input parameters and a fitness function-- the breeding, mutation, and so on should already be taken care of.
 
 
-HOW-TO
------------------------------
+## HOW-TO
 Right now, mutate.py is pretty fixed in what it can do. Tweak the parameters if you want, then just run it and watch it go! 
 
 
-TODO
------------------------------
+## TODO
 -- Implement multithreading
 -- Provide a way for the mutation rate to be adjusted as the population begins to stagnate
 -- Implement a nice way to watch the whole process (number of breeders, score histogram, etc.)
