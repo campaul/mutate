@@ -1,0 +1,13 @@
+'maxGenerations': None
+'maxLength': 7 # Change back to 66
+'minLength': 7
+'maxValue': 26
+'initPopSize': 250
+'popSize': 250
+'mutationRate': .5
+'elitistSelection': False # NOT READY! Hardcoded instead of done by normalization.
+'normalizeScores': False
+'maxBreeders': 250
+'execTimePenalty': 10000
+'execIterations': 8
+'elitePercentile': .95

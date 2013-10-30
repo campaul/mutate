@@ -1,6 +1,4 @@
-words.txt
-mutate.pyc
-stack.pyc
+*.pyc
+config.yaml
 output.txt
-
-
+words.txt

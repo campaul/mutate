@@ -1,7 +1,7 @@
-import random
-
-import stack as StackMachine
 import mutate
+import random
+import stack as StackMachine
+import yaml
 
 stack = StackMachine.Stack()
 
@@ -59,22 +59,7 @@ def generate_test():
 	return (number,even)
 	
 def __main__():
-	params = {
-		'maxGenerations':100,
-		'maxLength':4,
-		'minLength':1,
-		'maxValue':27,
-		'initPopSize':100,
-		'popSize':250,
-		'mutationRate':.015,
-		'elitistSelection':False,
-		'normalizeScores':False,
-		'maxBreeders':50,
-		'execTimePenalty':10000,
-		'execIterations':8,
-		'elitePercentile':.95
-		}
-	
+	params = yaml.load(open('config.yaml'))
 	encMap = ['+',
 		'-',
 		'/',
